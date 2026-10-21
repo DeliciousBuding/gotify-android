@@ -584,7 +584,7 @@ internal class MessagesActivity :
             updateMessagesForApplication(false, viewModel.appId)
         } else {
             withContext(Dispatchers.Main) {
-                Utils.showSnackBar(this@MessagesActivity, "Delete failed :(")
+                Utils.showSnackBar(this@MessagesActivity, getString(R.string.delete_failed))
             }
         }
     }

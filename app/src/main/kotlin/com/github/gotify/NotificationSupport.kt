@@ -35,7 +35,9 @@ internal object NotificationSupport {
     ) {
         if (areAppChannelsRequested(context)) {
             notificationManager.notificationChannels.forEach { channel ->
-                if (channel.id != Channel.FOREGROUND) {
+                if (channel.id != Channel.FOREGROUND &&
+                    channel.id != Channel.P0_ALARM_FOREGROUND
+                ) {
                     notificationManager.deleteNotificationChannel(channel.id)
                 }
             }

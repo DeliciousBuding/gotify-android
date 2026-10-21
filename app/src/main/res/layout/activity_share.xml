@@ -71,7 +71,7 @@
                         android:imeOptions="actionDone"
                         android:inputType="numberSigned"
                         android:maxLength="3"
-                        android:text="0" />
+                        android:text="@string/push_default_priority" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <LinearLayout

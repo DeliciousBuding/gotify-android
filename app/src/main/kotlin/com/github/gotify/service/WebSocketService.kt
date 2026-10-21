@@ -232,15 +232,13 @@ internal class WebSocketService : Service() {
 
     private fun onGroupedMessages(messages: List<Message>) {
         var highestPriority = 0L
-        var highestPriorityMessage: Message? = null
+        var p0AlarmMessage: Message? = null
         messages.forEach { message ->
             if (lastReceivedMessage.get() < message.id) {
                 lastReceivedMessage.set(message.id)
                 val messagePriority = message.priority ?: 0L
-                if (messagePriority >= highestPriority) {
-                    highestPriority = messagePriority
-                    highestPriorityMessage = message
-                }
+                highestPriority = highestPriority.coerceAtLeast(messagePriority)
+                if (P0AlarmPolicy.isCritical(messagePriority)) p0AlarmMessage = message
             }
             broadcast(message)
         }
@@ -252,7 +250,7 @@ internal class WebSocketService : Service() {
             highestPriority,
             null
         )
-        highestPriorityMessage?.let { P0AlarmScheduler.trigger(this, it) }
+        p0AlarmMessage?.let { P0AlarmScheduler.trigger(this, it) }
     }
 
     private fun onMessage(message: Message) {

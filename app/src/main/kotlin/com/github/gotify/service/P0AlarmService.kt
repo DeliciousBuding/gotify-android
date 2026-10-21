@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat
 import com.github.gotify.NotificationSupport
 import com.github.gotify.R
 import com.github.gotify.messages.MessagesActivity
+import org.tinylog.kotlin.Logger
 
 internal class P0AlarmService : Service() {
     companion object {
@@ -26,16 +27,24 @@ internal class P0AlarmService : Service() {
         const val ACTION_STOP = "com.github.gotify.action.P0_ALARM_STOP"
         const val EXTRA_TITLE = "title"
         const val EXTRA_MESSAGE = "message"
+        const val EXTRA_MESSAGE_ID = "message_id"
         private const val NOTIFICATION_ID = -3
         private const val ALARM_DURATION_MILLIS = 30_000L
 
-        fun start(context: Context, title: String, message: String) {
+        fun start(context: Context, title: String, message: String, messageId: Long = 0L): Boolean {
             val intent = Intent(context, P0AlarmService::class.java).apply {
                 action = ACTION_START
                 putExtra(EXTRA_TITLE, title)
                 putExtra(EXTRA_MESSAGE, message)
+                putExtra(EXTRA_MESSAGE_ID, messageId)
             }
-            ContextCompat.startForegroundService(context, intent)
+            return try {
+                ContextCompat.startForegroundService(context, intent)
+                true
+            } catch (e: Exception) {
+                Logger.warn(e, "Unable to start the P0 alarm foreground service")
+                false
+            }
         }
 
         fun stopPendingIntent(context: Context): PendingIntent {
@@ -52,15 +61,16 @@ internal class P0AlarmService : Service() {
     private val stopRunnable = Runnable { stopSelf() }
     private var player: MediaPlayer? = null
     private var wakeLock: PowerManager.WakeLock? = null
+    private var activeTitle = ""
+    private var activeMessage = ""
+    private var activeMessageId = 0L
 
     override fun onCreate() {
         super.onCreate()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationSupport.createP0AlarmForegroundChannel(
-                this,
-                getSystemService(NotificationManager::class.java)
-            )
-        }
+        NotificationSupport.createP0AlarmForegroundChannel(
+            this,
+            getSystemService(NotificationManager::class.java)
+        )
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -76,6 +86,9 @@ internal class P0AlarmService : Service() {
 
         val title = intent.getStringExtra(EXTRA_TITLE) ?: ""
         val message = intent.getStringExtra(EXTRA_MESSAGE) ?: ""
+        activeTitle = title
+        activeMessage = message
+        activeMessageId = intent.getLongExtra(EXTRA_MESSAGE_ID, 0L)
         val notification = buildNotification(title, message)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -88,9 +101,13 @@ internal class P0AlarmService : Service() {
             startForeground(NOTIFICATION_ID, notification)
         }
 
-        startAlarm()
-        handler.removeCallbacks(stopRunnable)
-        handler.postDelayed(stopRunnable, ALARM_DURATION_MILLIS)
+        if (startAlarm()) {
+            handler.removeCallbacks(stopRunnable)
+            handler.postDelayed(stopRunnable, ALARM_DURATION_MILLIS)
+        } else {
+            P0AlarmNotifications.postSoundFallback(this, title, message, activeMessageId)
+            stopSelf()
+        }
         return START_NOT_STICKY
     }
 
@@ -127,31 +144,68 @@ internal class P0AlarmService : Service() {
             .build()
     }
 
-    private fun startAlarm() {
-        if (player != null) return
+    private fun startAlarm(): Boolean {
+        if (player != null) return true
 
+        val ringtoneUris = listOfNotNull(
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+        ).distinct()
+        if (ringtoneUris.isEmpty()) {
+            Logger.warn("No system alarm or notification sound is configured")
+            return false
+        }
+
+        var lastFailure: Exception? = null
+        for (ringtoneUri in ringtoneUris) {
+            val candidate = MediaPlayer()
+            try {
+                candidate.setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+                candidate.setDataSource(this, ringtoneUri)
+                candidate.isLooping = true
+                candidate.setOnErrorListener { _, what, extra ->
+                    Logger.error("P0 alarm playback failed: what=$what extra=$extra")
+                    P0AlarmNotifications.postSoundFallback(
+                        this@P0AlarmService,
+                        activeTitle,
+                        activeMessage,
+                        activeMessageId
+                    )
+                    stopSelf()
+                    true
+                }
+                candidate.prepare()
+                candidate.start()
+                player = candidate
+                acquireWakeLock()
+                return true
+            } catch (e: Exception) {
+                lastFailure = e
+                candidate.release()
+                Logger.warn(e, "Could not play P0 alarm sound $ringtoneUri")
+            }
+        }
+        if (lastFailure != null) {
+            Logger.error(lastFailure, "No configured system sound could play the P0 alarm")
+        } else {
+            Logger.error("No configured system sound could play the P0 alarm")
+        }
+        return false
+    }
+
+    private fun acquireWakeLock() {
         val powerManager = getSystemService(PowerManager::class.java)
         wakeLock = powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
             "$packageName:p0-alarm"
         ).apply {
             acquire(ALARM_DURATION_MILLIS + 5_000L)
-        }
-
-        val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-            ?: return
-        player = MediaPlayer().apply {
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-            )
-            setDataSource(this@P0AlarmService, alarmUri)
-            isLooping = true
-            prepare()
-            start()
         }
     }
 

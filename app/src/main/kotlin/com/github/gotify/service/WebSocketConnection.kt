@@ -114,13 +114,10 @@ internal class WebSocketConnection(
 
     @Synchronized
     fun close() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            alarmManagerCallback?.run(alarmManager::cancel)
-            alarmManagerCallback = null
-        } else {
-            handlerCallback?.run(reconnectHandler::removeCallbacks)
-            handlerCallback = null
-        }
+        alarmManagerCallback?.run(alarmManager::cancel)
+        alarmManagerCallback = null
+        handlerCallback?.run(reconnectHandler::removeCallbacks)
+        handlerCallback = null
         if (webSocket != null) {
             webSocket?.close(1000, "")
             closed()
@@ -143,14 +140,22 @@ internal class WebSocketConnection(
         }
         state = State.Scheduled
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            Logger.info("WebSocket: scheduling a restart in $scheduleIn (via alarm manager)")
-            val future = Calendar.getInstance()
-            future.add(Calendar.SECOND, scheduleIn.inWholeSeconds.toInt())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            !alarmManager.canScheduleExactAlarms()
+        ) {
+            Logger.warn("WebSocket: exact alarms unavailable; scheduling reconnect with Handler")
+            scheduleReconnectWithHandler(id, scheduleIn)
+            return
+        }
 
-            alarmManagerCallback?.run(alarmManager::cancel)
-            val cb = OnAlarmListener { syncExec(id) { start() } }
-            alarmManagerCallback = cb
+        Logger.info("WebSocket: scheduling a restart in $scheduleIn (via alarm manager)")
+        val future = Calendar.getInstance()
+        future.add(Calendar.SECOND, scheduleIn.inWholeSeconds.toInt())
+
+        alarmManagerCallback?.run(alarmManager::cancel)
+        val cb = OnAlarmListener { syncExec(id) { start() } }
+        alarmManagerCallback = cb
+        try {
             alarmManager.setExact(
                 AlarmManager.RTC_WAKEUP,
                 future.timeInMillis,
@@ -158,13 +163,20 @@ internal class WebSocketConnection(
                 cb,
                 null
             )
-        } else {
-            Logger.info("WebSocket: scheduling a restart in $scheduleIn")
-            handlerCallback?.run(reconnectHandler::removeCallbacks)
-            val cb = Runnable { syncExec(id) { start() } }
-            handlerCallback = cb
-            reconnectHandler.postDelayed(cb, scheduleIn.inWholeMilliseconds)
+        } catch (e: SecurityException) {
+            Logger.warn(e, "WebSocket: unable to schedule exact reconnect alarm")
+            alarmManagerCallback = null
+            scheduleReconnectWithHandler(id, scheduleIn)
         }
+    }
+
+    @Synchronized
+    private fun scheduleReconnectWithHandler(id: Long, scheduleIn: Duration) {
+        Logger.info("WebSocket: scheduling a restart in $scheduleIn")
+        handlerCallback?.run(reconnectHandler::removeCallbacks)
+        val cb = Runnable { syncExec(id) { start() } }
+        handlerCallback = cb
+        reconnectHandler.postDelayed(cb, scheduleIn.inWholeMilliseconds)
     }
 
     private inner class Listener(private val id: Long) : WebSocketListener() {

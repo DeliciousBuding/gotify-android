@@ -58,7 +58,6 @@
     <string name="permissions_dialog_grant">Grant</string>
     <string name="permissions_notification_denied_temp">Gotify requires permission to display push notifications.</string>
     <string name="permissions_notification_denied_permanent">Gotify requires permission to display push notifications. Please grant the required permission in the settings.</string>
-    <string name="permissions_alarm_prompt">Gotify requires permission to schedule reconnecting after connection is lost.</string>
     <string name="gotify_logo">Gotify logo</string>
     <string name="refresh_all">Refresh all</string>
     <string name="logout_confirm">Do you really want to logout?</string>
@@ -82,33 +81,58 @@
     <string name="title_activity_settings">Settings</string>
     <string name="settings_appearance">Appearance</string>
     <string name="setting_theme">Theme</string>
-    <string name="setting_key_theme">theme</string>
+    <string name="setting_key_theme" translatable="false">theme</string>
     <string name="setting_message_layout">Message layout</string>
-    <string name="setting_key_message_layout">message_layout</string>
+    <string name="setting_key_message_layout" translatable="false">message_layout</string>
     <string name="setting_restart_dialog_title">Restart App?</string>
     <string name="setting_restart_dialog_message">The change will be effective on next app start.\n\nDo you want to restart now?</string>
     <string name="setting_restart_dialog_button1">Restart</string>
     <string name="setting_restart_dialog_button2">Later</string>
     <string name="setting_time_format">Time format</string>
-    <string name="setting_key_time_format">time_format</string>
+    <string name="setting_key_time_format" translatable="false">time_format</string>
     <string name="setting_notifications">Notifications</string>
     <string name="setting_notification_channels">Separate app notification channels</string>
-    <string name="setting_key_notification_channels">notification_channels</string>
-    <string name="setting_key_exclude_from_recent">exclude_from_recent</string>
+    <string name="setting_key_notification_channels" translatable="false">notification_channels</string>
+    <string name="setting_key_exclude_from_recent" translatable="false">exclude_from_recent</string>
     <string name="setting_exclude_from_recent">Exclude from recents</string>
     <string name="setting_intent_dialog_permission">Intent Action Permission</string>
-    <string name="setting_key_intent_dialog_permission">intent_dialog_permission</string>
+    <string name="setting_key_intent_dialog_permission" translatable="false">intent_dialog_permission</string>
     <string name="setting_summary_intent_dialog_permission">To always show incoming intent URLs, give permission to show this app on top of other apps.</string>
     <string name="setting_summary_intent_dialog_permission_granted">Permission granted.</string>
     <string name="setting_prompt_onreceive_intent">Confirm onReceive intents</string>
-    <string name="setting_key_prompt_onreceive_intent">prompt_onreceive_intent</string>
+    <string name="setting_key_prompt_onreceive_intent" translatable="false">prompt_onreceive_intent</string>
     <string name="setting_summary_prompt_onreceive_intent">If enabled, a dialog is shown before onReceive.intentUrl is executed.</string>
+    <string name="setting_p0_alarm_category">P0 critical alarm</string>
     <string name="setting_p0_alarm">Critical alarm</string>
-    <string name="setting_key_p0_alarm">p0_alarm_enabled</string>
-    <string name="setting_summary_p0_alarm">Play the system alarm tone for messages with priority 8 or higher. The alarm stops automatically after 30 seconds.</string>
+    <string name="setting_key_p0_alarm" translatable="false">p0_alarm_enabled</string>
+    <string name="setting_summary_p0_alarm">Play the system alarm tone only for messages with priority 10. The alarm stops automatically after 30 seconds.</string>
+    <string name="setting_p0_alarm_exact_permission">Exact alarm permission</string>
+    <string name="setting_key_p0_alarm_exact_permission" translatable="false">p0_alarm_exact_permission</string>
+    <string name="p0_alarm_exact_permission_granted">Granted. Priority-10 alarms can run at the requested time.</string>
+    <string name="p0_alarm_exact_permission_denied">Not granted. The alarm still starts immediately after receipt as a fallback.</string>
+    <string name="p0_alarm_exact_permission_not_required">This Android version does not require separate exact-alarm access.</string>
+    <string name="p0_alarm_exact_permission_required">Exact alarms are not allowed yet. Your priority-10 alarm will fall back to starting immediately.</string>
+    <string name="setting_p0_alarm_notification_permission">Notification permission</string>
+    <string name="setting_key_p0_alarm_notification_permission" translatable="false">p0_alarm_notification_permission</string>
+    <string name="p0_alarm_notification_permission_granted">Granted. The alarm and its stop action can appear in the notification shade.</string>
+    <string name="p0_alarm_notification_permission_denied">Not granted. Android may hide the alarm notification and stop action.</string>
+    <string name="setting_p0_alarm_battery_optimization">Battery optimization</string>
+    <string name="setting_key_p0_alarm_battery_optimization" translatable="false">p0_alarm_battery_optimization</string>
+    <string name="p0_alarm_battery_optimization_unrestricted">Not restricted. Android is less likely to stop the background connection.</string>
+    <string name="p0_alarm_battery_optimization_restricted">Restricted. Android may stop the background connection, so priority-10 messages may not arrive.</string>
+    <string name="setting_p0_alarm_test">Test critical alarm</string>
+    <string name="setting_key_p0_alarm_test" translatable="false">p0_alarm_test</string>
+    <string name="setting_summary_p0_alarm_test">Play the same local alarm for 30 seconds. No server message is sent.</string>
+    <string name="setting_p0_alarm_limits">Reliability limits</string>
+    <string name="setting_key_p0_alarm_limits" translatable="false">p0_alarm_limits</string>
+    <string name="setting_summary_p0_alarm_limits">Do Not Disturb must allow alarms, alarm volume must be audible, and battery optimization must not block the app’s connection. P0 events still need a Feishu copy.</string>
     <string name="p0_alarm_stop">Stop alarm</string>
     <string name="p0_alarm_notification_title">Critical alert: %s</string>
     <string name="p0_alarm_active">P0 alarm active</string>
+    <string name="p0_alarm_fallback_title">Critical alert — sound unavailable</string>
+    <string name="p0_alarm_test_title">P0 alarm test</string>
+    <string name="p0_alarm_test_message">This is how a priority-10 critical alarm sounds.</string>
+    <string name="p0_alarm_test_started">Test alarm scheduled. It starts within one second and stops after 30 seconds.</string>
     <string name="push_message">Push message</string>
     <string name="appListDescription">App:</string>
     <string name="priorityDescription">Priority:</string>
@@ -116,6 +140,7 @@
     <string name="push_title_hint">Title</string>
     <string name="push_content_hint">Content</string>
     <string name="push_priority_hint">Priority</string>
+    <string name="push_default_priority" translatable="false">0</string>
     <string name="push_missing_app_info">There are no applications available on the server to push a message to.</string>
     <string name="message_copied_to_clipboard">Content copied to clipboard</string>
     <string name="not_loggedin_share">Cannot share to Gotify, because you aren\'t logged in.</string>
@@ -123,22 +148,32 @@
     <string name="action_dialog_message">You have received a message with an intent url:</string>
     <string name="action_dialog_button_open">Open</string>
     <string name="action_dialog_button_cancel">Cancel</string>
+    <string name="learn_send_messages">Learn how to send messages</string>
+    <string name="invalid_url">Invalid URL (include http:// or https://)</string>
+    <string name="delete_failed">Delete failed</string>
+    <string name="applications_request_failed">Could not request applications. See logs.</string>
+    <string name="share_content_empty">Content should not be empty.</string>
+    <string name="share_priority_invalid">Priority should be a number.</string>
+    <string name="share_app_required">Select an application.</string>
+    <string name="share_success">Message pushed.</string>
+    <string name="share_failure">Could not push the message.</string>
 
     <string name="websocket_error">Error %s (see logs)</string>
     <string name="websocket_reconnect">Trying to reconnect in %s</string>
     <string name="setting_reconnect_delay">Reconnect Delay (Seconds)</string>
-    <string name="setting_key_reconnect_delay">reconnect_delay</string>
+    <string name="setting_key_reconnect_delay" translatable="false">reconnect_delay</string>
+    <string name="setting_reconnect_delay_invalid">Enter a value between 5 and 1200.</string>
     <string name="setting_connection">Connection</string>
     <string name="setting_reconnect_interval_summary">Delay between reconnect attempts</string>
     <string name="setting_exponential_backoff_title">Exponential Backoff</string>
     <string name="setting_exponential_backoff_summary">Exponentially increase the reconnect delay for each reconnect attempt</string>
-    <string name="setting_key_exponential_backoff">reconnect_exponential_backoff</string>
+    <string name="setting_key_exponential_backoff" translatable="false">reconnect_exponential_backoff</string>
 
     <string name="notification_channel_title_foreground">Gotify foreground notification</string>
     <string name="notification_channel_title_min">Min priority messages (&lt;1)</string>
     <string name="notification_channel_title_low">Low priority messages (1–3)</string>
     <string name="notification_channel_title_normal">Normal priority messages (4–7)</string>
     <string name="notification_channel_title_high">High priority messages (>7)</string>
-    <string name="notification_channel_title_p0_alarm">Critical alarm messages (≥8)</string>
+    <string name="notification_channel_title_p0_alarm">Critical alarm messages (priority 10)</string>
     <string name="notification_channel_title_p0_alarm_foreground">Critical alarm playback</string>
 </resources>

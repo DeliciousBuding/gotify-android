@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.MenuItem
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
 import androidx.preference.ListPreference
@@ -21,6 +22,8 @@ import androidx.preference.SwitchPreferenceCompat
 import com.github.gotify.R
 import com.github.gotify.Utils
 import com.github.gotify.databinding.SettingsActivityBinding
+import com.github.gotify.service.AppPermissions
+import com.github.gotify.service.P0AlarmScheduler
 import com.github.gotify.service.WebSocketService
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -70,11 +73,9 @@ internal class SettingsActivity :
     class SettingsFragment : PreferenceFragmentCompat() {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                findPreference<SwitchPreferenceCompat>(
-                    getString(R.string.setting_key_notification_channels)
-                )?.isEnabled = true
-            }
+            findPreference<SwitchPreferenceCompat>(
+                getString(R.string.setting_key_notification_channels)
+            )?.isEnabled = true
             findPreference<androidx.preference.EditTextPreference>(
                 getString(R.string.setting_key_reconnect_delay)
             )?.onPreferenceChangeListener =
@@ -83,7 +84,7 @@ internal class SettingsActivity :
                     if (value !in 5..1200) {
                         Utils.showSnackBar(
                             requireActivity(),
-                            "Please enter a value between 5 and 1200"
+                            getString(R.string.setting_reconnect_delay_invalid)
                         )
                         return@OnPreferenceChangeListener false
                     }
@@ -118,9 +119,6 @@ internal class SettingsActivity :
                 getString(R.string.setting_key_notification_channels)
             )?.onPreferenceChangeListener =
                 Preference.OnPreferenceChangeListener { _, _ ->
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                        return@OnPreferenceChangeListener false
-                    }
                     showRestartDialog()
                     true
                 }
@@ -138,7 +136,9 @@ internal class SettingsActivity :
                     openSystemAlertWindowPermissionPage()
                 }
             }
+            configureP0AlarmPreferences()
             checkSystemAlertWindowPermission()
+            updateP0AlarmPreferenceSummaries()
         }
 
         override fun onDisplayPreferenceDialog(preference: Preference) {
@@ -152,6 +152,111 @@ internal class SettingsActivity :
         override fun onResume() {
             super.onResume()
             checkSystemAlertWindowPermission()
+            updateP0AlarmPreferenceSummaries()
+        }
+
+        private fun configureP0AlarmPreferences() {
+            findPreference<SwitchPreferenceCompat>(
+                getString(R.string.setting_key_p0_alarm)
+            )?.setOnPreferenceChangeListener { _, value ->
+                if (value as Boolean &&
+                    !AppPermissions.canScheduleExactAlarms(requireContext())
+                ) {
+                    Toast.makeText(
+                        requireContext(),
+                        R.string.p0_alarm_exact_permission_required,
+                        Toast.LENGTH_LONG
+                    ).show()
+                    openExactAlarmPermissionPage()
+                }
+                true
+            }
+            findPreference<Preference>(
+                getString(R.string.setting_key_p0_alarm_exact_permission)
+            )?.setOnPreferenceClickListener {
+                openExactAlarmPermissionPage()
+                true
+            }
+            findPreference<Preference>(
+                getString(R.string.setting_key_p0_alarm_notification_permission)
+            )?.setOnPreferenceClickListener {
+                openNotificationPermissionPage()
+                true
+            }
+            findPreference<Preference>(
+                getString(R.string.setting_key_p0_alarm_battery_optimization)
+            )?.setOnPreferenceClickListener {
+                startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                true
+            }
+            findPreference<Preference>(
+                getString(R.string.setting_key_p0_alarm_test)
+            )?.setOnPreferenceClickListener {
+                P0AlarmScheduler.triggerTest(
+                    requireContext(),
+                    getString(R.string.p0_alarm_test_title),
+                    getString(R.string.p0_alarm_test_message)
+                )
+                Toast.makeText(
+                    requireContext(),
+                    R.string.p0_alarm_test_started,
+                    Toast.LENGTH_SHORT
+                ).show()
+                true
+            }
+        }
+
+        private fun updateP0AlarmPreferenceSummaries() {
+            val context = requireContext()
+            findPreference<SwitchPreferenceCompat>(
+                getString(R.string.setting_key_p0_alarm)
+            )?.summary = getString(R.string.setting_summary_p0_alarm)
+            findPreference<Preference>(
+                getString(R.string.setting_key_p0_alarm_exact_permission)
+            )?.summary = when {
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.S ->
+                    getString(R.string.p0_alarm_exact_permission_not_required)
+                AppPermissions.canScheduleExactAlarms(context) ->
+                    getString(R.string.p0_alarm_exact_permission_granted)
+                else ->
+                    getString(R.string.p0_alarm_exact_permission_denied)
+            }
+            findPreference<Preference>(
+                getString(R.string.setting_key_p0_alarm_notification_permission)
+            )?.summary =
+                if (AppPermissions.areNotificationsEnabled(context)) {
+                    getString(R.string.p0_alarm_notification_permission_granted)
+                } else {
+                    getString(R.string.p0_alarm_notification_permission_denied)
+                }
+            findPreference<Preference>(
+                getString(R.string.setting_key_p0_alarm_battery_optimization)
+            )?.summary =
+                if (AppPermissions.isIgnoringBatteryOptimizations(context)) {
+                    getString(R.string.p0_alarm_battery_optimization_unrestricted)
+                } else {
+                    getString(R.string.p0_alarm_battery_optimization_restricted)
+                }
+        }
+
+        private fun openExactAlarmPermissionPage() {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+            val intent = Intent(
+                Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                "package:${requireContext().packageName}".toUri()
+            )
+            try {
+                startActivity(intent)
+            } catch (_: Exception) {
+                startActivity(Intent(Settings.ACTION_SETTINGS))
+            }
+        }
+
+        private fun openNotificationPermissionPage() {
+            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().packageName)
+            }
+            startActivity(intent)
         }
 
         private fun openSystemAlertWindowPermissionPage(): Boolean {

@@ -1,10 +1,10 @@
 package com.github.gotify.service
 
 internal object P0AlarmPolicy {
-    const val MIN_PRIORITY = 8L
+    const val P0_PRIORITY = 10L
     const val COOLDOWN_MILLIS = 5 * 60 * 1000L
 
-    fun isCritical(priority: Long?): Boolean = (priority ?: 0L) >= MIN_PRIORITY
+    fun isCritical(priority: Long?): Boolean = priority == P0_PRIORITY
 
     fun shouldTrigger(
         priority: Long?,

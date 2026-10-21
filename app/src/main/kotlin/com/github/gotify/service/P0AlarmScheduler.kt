@@ -4,7 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
+import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.github.gotify.R
 import com.github.gotify.client.model.Message
@@ -38,14 +38,14 @@ internal object P0AlarmScheduler {
 
         if (!shouldTrigger) return false
 
-        prefs.edit()
-            .putLong(PREF_LAST_TRIGGERED_AT, now)
-            .putLong(PREF_LAST_MESSAGE_ID, message.id)
-            .apply()
+        prefs.edit {
+            putLong(PREF_LAST_TRIGGERED_AT, now)
+            putLong(PREF_LAST_MESSAGE_ID, message.id)
+        }
 
         val title = message.title ?: ""
         val body = message.message
-        schedule(context, title, body)
+        schedule(context, title, body, message.id)
         Logger.info("P0 alarm scheduled for message ${message.id}")
         return true
     }
@@ -55,8 +55,12 @@ internal object P0AlarmScheduler {
         alarmManager.cancel(alarmPendingIntent(context))
     }
 
-    private fun schedule(context: Context, title: String, body: String) {
-        val operation = alarmPendingIntent(context, title, body)
+    fun triggerTest(context: Context, title: String, body: String) {
+        schedule(context, title, body, messageId = 0L)
+    }
+
+    private fun schedule(context: Context, title: String, body: String, messageId: Long) {
+        val operation = alarmPendingIntent(context, title, body, messageId)
         val showIntent = PendingIntent.getActivity(
             context,
             1,
@@ -66,11 +70,9 @@ internal object P0AlarmScheduler {
         val alarmManager = context.getSystemService(AlarmManager::class.java)
         val triggerAt = System.currentTimeMillis() + ALARM_DELAY_MILLIS
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-            !alarmManager.canScheduleExactAlarms()
-        ) {
+        if (!AppPermissions.canScheduleExactAlarms(context)) {
             Logger.warn("Exact alarms unavailable; starting P0 alarm immediately")
-            P0AlarmService.start(context, title, body)
+            startImmediately(context, title, body, messageId)
             return
         }
 
@@ -81,18 +83,26 @@ internal object P0AlarmScheduler {
             )
         } catch (e: SecurityException) {
             Logger.warn(e, "Unable to schedule exact P0 alarm; starting immediately")
-            P0AlarmService.start(context, title, body)
+            startImmediately(context, title, body, messageId)
+        }
+    }
+
+    private fun startImmediately(context: Context, title: String, body: String, messageId: Long) {
+        if (!P0AlarmService.start(context, title, body, messageId)) {
+            P0AlarmNotifications.postSoundFallback(context, title, body, messageId)
         }
     }
 
     private fun alarmPendingIntent(
         context: Context,
         title: String = "",
-        body: String = ""
+        body: String = "",
+        messageId: Long = 0L
     ): PendingIntent {
         val intent = Intent(context, P0AlarmReceiver::class.java).apply {
             putExtra(P0AlarmService.EXTRA_TITLE, title)
             putExtra(P0AlarmService.EXTRA_MESSAGE, body)
+            putExtra(P0AlarmService.EXTRA_MESSAGE_ID, messageId)
         }
         return PendingIntent.getBroadcast(
             context,

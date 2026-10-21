@@ -1,6 +1,7 @@
 package com.github.gotify.messages.provider
 
 import android.app.Activity
+import com.github.gotify.R
 import com.github.gotify.Utils
 import com.github.gotify.api.Callback
 import com.github.gotify.client.ApiClient
@@ -32,7 +33,7 @@ internal class ApplicationHolder(private val activity: Activity, private val cli
     }
 
     private fun onFailedApps() {
-        Utils.showSnackBar(activity, "Could not request applications, see logs.")
+        Utils.showSnackBar(activity, activity.getString(R.string.applications_request_failed))
         if (onUpdateFailed != null) onUpdateFailed!!.run()
     }
 

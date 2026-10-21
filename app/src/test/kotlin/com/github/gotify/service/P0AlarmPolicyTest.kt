@@ -6,16 +6,21 @@ import org.junit.Test
 
 class P0AlarmPolicyTest {
     @Test
-    fun priorityEightIsCritical() {
-        assertFalse(P0AlarmPolicy.isCritical(7))
-        assertTrue(P0AlarmPolicy.isCritical(8))
+    fun onlyPriorityTenIsCritical() {
+        assertFalse(P0AlarmPolicy.isCritical(8))
+        assertFalse(P0AlarmPolicy.isCritical(9))
         assertTrue(P0AlarmPolicy.isCritical(10))
+        assertFalse(P0AlarmPolicy.isCritical(11))
+        assertFalse(P0AlarmPolicy.isCritical(null))
     }
 
     @Test
     fun disabledOrLowPriorityDoesNotTrigger() {
         assertFalse(trigger(priority = 10, enabled = false))
-        assertFalse(trigger(priority = 7, enabled = true))
+        assertFalse(trigger(priority = 8, enabled = true))
+        assertFalse(trigger(priority = 9, enabled = true))
+        assertTrue(trigger(priority = 10, enabled = true))
+        assertFalse(trigger(priority = 11, enabled = true))
     }
 
     @Test
@@ -44,7 +49,7 @@ class P0AlarmPolicyTest {
     }
 
     private fun trigger(
-        priority: Long = 8,
+        priority: Long = 10,
         enabled: Boolean = true,
         now: Long = 1_000L + P0AlarmPolicy.COOLDOWN_MILLIS,
         messageId: Long = 34,

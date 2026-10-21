@@ -6,7 +6,7 @@
         <ListPreference
             android:defaultValue="@string/theme_default"
             android:entries="@array/mode"
-            android:entryValues="@array/mode"
+            android:entryValues="@array/mode_values"
             android:key="@string/setting_key_theme"
             android:title="@string/setting_theme" />
 
@@ -50,11 +50,42 @@
             android:defaultValue="@bool/prompt_onreceive_intent"
             android:summary="@string/setting_summary_prompt_onreceive_intent" />
 
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/setting_p0_alarm_category">
         <SwitchPreferenceCompat
             android:key="@string/setting_key_p0_alarm"
             android:title="@string/setting_p0_alarm"
             android:defaultValue="false"
             android:summary="@string/setting_summary_p0_alarm"
+            app:singleLineTitle="false" />
+
+        <Preference
+            android:key="@string/setting_key_p0_alarm_exact_permission"
+            android:title="@string/setting_p0_alarm_exact_permission"
+            app:singleLineTitle="false" />
+
+        <Preference
+            android:key="@string/setting_key_p0_alarm_notification_permission"
+            android:title="@string/setting_p0_alarm_notification_permission"
+            app:singleLineTitle="false" />
+
+        <Preference
+            android:key="@string/setting_key_p0_alarm_battery_optimization"
+            android:title="@string/setting_p0_alarm_battery_optimization"
+            app:singleLineTitle="false" />
+
+        <Preference
+            android:key="@string/setting_key_p0_alarm_test"
+            android:title="@string/setting_p0_alarm_test"
+            android:summary="@string/setting_summary_p0_alarm_test"
+            app:singleLineTitle="false" />
+
+        <Preference
+            android:key="@string/setting_key_p0_alarm_limits"
+            android:title="@string/setting_p0_alarm_limits"
+            android:summary="@string/setting_summary_p0_alarm_limits"
+            android:selectable="false"
             app:singleLineTitle="false" />
     </PreferenceCategory>
 

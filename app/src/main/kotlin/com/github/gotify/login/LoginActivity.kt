@@ -227,7 +227,7 @@ internal class LoginActivity : AppCompatActivity() {
         val url = binding.gotifyUrlEditext.text.toString().trim().trimEnd('/')
         val parsedUrl = url.toHttpUrlOrNull()
         if (parsedUrl == null) {
-            Utils.showSnackBar(this, "Invalid URL (include http:// or https://)")
+            Utils.showSnackBar(this, getString(R.string.invalid_url))
             return
         }
         if ("http" == parsedUrl.scheme) {

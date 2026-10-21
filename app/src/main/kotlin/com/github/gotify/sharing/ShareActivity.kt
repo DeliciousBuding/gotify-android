@@ -95,15 +95,15 @@ internal class ShareActivity : AppCompatActivity() {
         val appIndex = binding.appSpinner.selectedItemPosition
 
         if (contentText.isEmpty()) {
-            Toast.makeText(this, "Content should not be empty.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, R.string.share_content_empty, Toast.LENGTH_LONG).show()
             return
         } else if (priority.isEmpty()) {
-            Toast.makeText(this, "Priority should be number.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, R.string.share_priority_invalid, Toast.LENGTH_LONG).show()
             return
         } else if (appIndex == Spinner.INVALID_POSITION) {
             // For safety, e.g. loading the apps needs too much time (maybe a timeout) and
             // the user tries to push without an app selected.
-            Toast.makeText(this, "An app must be selected.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, R.string.share_app_required, Toast.LENGTH_LONG).show()
             return
         }
 
@@ -118,12 +118,13 @@ internal class ShareActivity : AppCompatActivity() {
             val response = executeMessageCall(appsHolder.get()[appIndex], message)
             withContext(Dispatchers.Main) {
                 if (response) {
-                    Toast.makeText(this@ShareActivity, "Pushed!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@ShareActivity, R.string.share_success, Toast.LENGTH_LONG)
+                        .show()
                     finish()
                 } else {
                     Toast.makeText(
                         this@ShareActivity,
-                        "Oops! Something went wrong...",
+                        R.string.share_failure,
                         Toast.LENGTH_LONG
                     ).show()
                 }

@@ -1,0 +1,37 @@
+<resources>
+    <string-array name="mode">
+        <item>@string/theme_light_label</item>
+        <item>@string/theme_dark_label</item>
+        <item>@string/theme_default_label</item>
+    </string-array>
+    <string-array name="mode_values">
+        <item>@string/theme_light</item>
+        <item>@string/theme_dark</item>
+        <item>@string/theme_default</item>
+    </string-array>
+    <string name="theme_light_label">浅色</string>
+    <string name="theme_dark_label">深色</string>
+    <string name="theme_default_label">跟随系统</string>
+
+    <string-array name="message_layout_entries">
+        <item>@string/message_layout_entry_normal</item>
+        <item>@string/message_layout_entry_compact</item>
+    </string-array>
+    <string name="message_layout_entry_normal">标准</string>
+    <string name="message_layout_entry_compact">紧凑</string>
+    <string-array name="message_layout_values">
+        <item>@string/message_layout_value_normal</item>
+        <item>@string/message_layout_value_compact</item>
+    </string-array>
+
+    <string-array name="time_format_entries">
+        <item>@string/time_format_entry_absolute</item>
+        <item>@string/time_format_entry_relative</item>
+    </string-array>
+    <string name="time_format_entry_absolute">绝对时间</string>
+    <string name="time_format_entry_relative">相对时间</string>
+    <string-array name="time_format_values">
+        <item>@string/time_format_value_absolute</item>
+        <item>@string/time_format_value_relative</item>
+    </string-array>
+</resources>
