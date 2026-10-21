@@ -232,10 +232,15 @@ internal class WebSocketService : Service() {
 
     private fun onGroupedMessages(messages: List<Message>) {
         var highestPriority = 0L
+        var highestPriorityMessage: Message? = null
         messages.forEach { message ->
             if (lastReceivedMessage.get() < message.id) {
                 lastReceivedMessage.set(message.id)
-                highestPriority = highestPriority.coerceAtLeast(message.priority ?: 0L)
+                val messagePriority = message.priority ?: 0L
+                if (messagePriority >= highestPriority) {
+                    highestPriority = messagePriority
+                    highestPriorityMessage = message
+                }
             }
             broadcast(message)
         }
@@ -247,6 +252,7 @@ internal class WebSocketService : Service() {
             highestPriority,
             null
         )
+        highestPriorityMessage?.let { P0AlarmScheduler.trigger(this, it) }
     }
 
     private fun onMessage(message: Message) {
@@ -262,6 +268,7 @@ internal class WebSocketService : Service() {
             message.extras,
             message.appid
         )
+        P0AlarmScheduler.trigger(this, message)
     }
 
     private fun broadcast(message: Message) {
@@ -379,15 +386,33 @@ internal class WebSocketService : Service() {
         )
 
         val channelId: String
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-            NotificationSupport.areAppChannelsRequested(this)
-        ) {
-            channelId = NotificationSupport.getChannelID(priority, appId.toString())
-            NotificationSupport.createChannelIfNonexistent(
-                this,
-                appId.toString(),
-                channelId
-            )
+        val p0AlarmEnabled =
+            P0AlarmPolicy.isCritical(priority) && P0AlarmScheduler.isEnabled(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            val separateChannels = NotificationSupport.areAppChannelsRequested(this)
+            if (separateChannels) {
+                val groupId = appId.toString()
+                channelId = if (p0AlarmEnabled) {
+                    NotificationSupport.getP0AlarmChannelID(groupId)
+                } else {
+                    NotificationSupport.getChannelID(priority, groupId)
+                }
+                NotificationSupport.createChannelIfNonexistent(
+                    this,
+                    groupId,
+                    channelId
+                )
+            } else {
+                channelId = if (p0AlarmEnabled) {
+                    NotificationSupport.getP0AlarmChannelID(null)
+                } else {
+                    NotificationSupport.convertPriorityToChannel(priority)
+                }
+                if (notificationManager.getNotificationChannel(channelId) == null) {
+                    NotificationSupport.createGeneralChannels(this, notificationManager)
+                }
+            }
         } else {
             channelId = NotificationSupport.convertPriorityToChannel(priority)
         }
@@ -410,6 +435,21 @@ internal class WebSocketService : Service() {
             .setLights(Color.CYAN, 1000, 5000)
             .setColor(ContextCompat.getColor(applicationContext, R.color.colorPrimary))
             .setContentIntent(contentIntent)
+            .setCategory(
+                if (p0AlarmEnabled) {
+                    NotificationCompat.CATEGORY_ALARM
+                } else {
+                    NotificationCompat.CATEGORY_MESSAGE
+                }
+            )
+
+        if (p0AlarmEnabled) {
+            b.addAction(
+                0,
+                getString(R.string.p0_alarm_stop),
+                P0AlarmService.stopPendingIntent(this)
+            )
+        }
 
         var formattedMessage = message as CharSequence
         var newMessage: String? = null

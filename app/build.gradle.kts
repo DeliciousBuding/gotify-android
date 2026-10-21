@@ -102,5 +102,6 @@ dependencies {
     implementation("com.google.code.gson:gson:2.13.1")
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
 
+    testImplementation("junit:junit:4.13.2")
 }
 

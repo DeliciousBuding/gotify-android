@@ -103,6 +103,12 @@
     <string name="setting_prompt_onreceive_intent">Confirm onReceive intents</string>
     <string name="setting_key_prompt_onreceive_intent">prompt_onreceive_intent</string>
     <string name="setting_summary_prompt_onreceive_intent">If enabled, a dialog is shown before onReceive.intentUrl is executed.</string>
+    <string name="setting_p0_alarm">Critical alarm</string>
+    <string name="setting_key_p0_alarm">p0_alarm_enabled</string>
+    <string name="setting_summary_p0_alarm">Play the system alarm tone for messages with priority 8 or higher. The alarm stops automatically after 30 seconds.</string>
+    <string name="p0_alarm_stop">Stop alarm</string>
+    <string name="p0_alarm_notification_title">Critical alert: %s</string>
+    <string name="p0_alarm_active">P0 alarm active</string>
     <string name="push_message">Push message</string>
     <string name="appListDescription">App:</string>
     <string name="priorityDescription">Priority:</string>
@@ -133,4 +139,6 @@
     <string name="notification_channel_title_low">Low priority messages (1–3)</string>
     <string name="notification_channel_title_normal">Normal priority messages (4–7)</string>
     <string name="notification_channel_title_high">High priority messages (>7)</string>
+    <string name="notification_channel_title_p0_alarm">Critical alarm messages (≥8)</string>
+    <string name="notification_channel_title_p0_alarm_foreground">Critical alarm playback</string>
 </resources>

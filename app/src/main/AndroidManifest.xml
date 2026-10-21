@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:name=".GotifyApplication"
@@ -88,6 +90,10 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="This is the main feature of this application. The foreground notification displays the connectivity status to the configurable remote server and the service notifies the user when a new message has been published on the remote server." />
         </service>
+        <service
+            android:name=".service.P0AlarmService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <receiver android:name=".init.BootCompletedReceiver"
             android:exported="true">
@@ -95,6 +101,9 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+        <receiver
+            android:name=".service.P0AlarmReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>

@@ -51,7 +51,7 @@ internal object NotificationSupport {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun createGeneralChannels(context: Context, notificationManager: NotificationManager) {
+    fun createGeneralChannels(context: Context, notificationManager: NotificationManager) {
         try {
             val messagesImportanceMin = NotificationChannel(
                 Channel.MESSAGES_IMPORTANCE_MIN,
@@ -85,10 +85,22 @@ internal object NotificationSupport {
                 enableVibration(true)
             }
 
+            val messagesP0Alarm = NotificationChannel(
+                Channel.MESSAGES_P0_ALARM,
+                context.getString(R.string.notification_channel_title_p0_alarm),
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                enableLights(true)
+                lightColor = Color.CYAN
+                enableVibration(true)
+                setSound(null, null)
+            }
+
             notificationManager.createNotificationChannel(messagesImportanceMin)
             notificationManager.createNotificationChannel(messagesImportanceLow)
             notificationManager.createNotificationChannel(messagesImportanceDefault)
             notificationManager.createNotificationChannel(messagesImportanceHigh)
+            notificationManager.createNotificationChannel(messagesP0Alarm)
         } catch (e: Exception) {
             Logger.error(e, "Could not create channel")
         }
@@ -156,13 +168,39 @@ internal object NotificationSupport {
                 group = groupId
             }
 
+            val messagesP0Alarm = NotificationChannel(
+                getChannelID(Channel.MESSAGES_P0_ALARM, groupId),
+                context.getString(R.string.notification_channel_title_p0_alarm),
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                enableLights(true)
+                lightColor = Color.CYAN
+                enableVibration(true)
+                setSound(null, null)
+                group = groupId
+            }
+
             notificationManager.createNotificationChannel(messagesImportanceMin)
             notificationManager.createNotificationChannel(messagesImportanceLow)
             notificationManager.createNotificationChannel(messagesImportanceDefault)
             notificationManager.createNotificationChannel(messagesImportanceHigh)
+            notificationManager.createNotificationChannel(messagesP0Alarm)
         } catch (e: Exception) {
             Logger.error(e, "Could not create channel")
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun createP0AlarmForegroundChannel(context: Context, notificationManager: NotificationManager) {
+        val channel = NotificationChannel(
+            Channel.P0_ALARM_FOREGROUND,
+            context.getString(R.string.notification_channel_title_p0_alarm_foreground),
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            setShowBadge(false)
+            setSound(null, null)
+        }
+        notificationManager.createNotificationChannel(channel)
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -207,6 +245,14 @@ internal object NotificationSupport {
         return getChannelID(convertPriorityToChannel(priority), groupId)
     }
 
+    fun getP0AlarmChannelID(groupId: String?): String {
+        return if (groupId == null) {
+            Channel.MESSAGES_P0_ALARM
+        } else {
+            getChannelID(Channel.MESSAGES_P0_ALARM, groupId)
+        }
+    }
+
     fun areAppChannelsRequested(context: Context): Boolean {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(
             context.getString(R.string.setting_key_notification_channels),
@@ -224,6 +270,8 @@ internal object NotificationSupport {
         const val MESSAGES_IMPORTANCE_LOW = "gotify_messages_low_importance"
         const val MESSAGES_IMPORTANCE_DEFAULT = "gotify_messages_default_importance"
         const val MESSAGES_IMPORTANCE_HIGH = "gotify_messages_high_importance"
+        const val MESSAGES_P0_ALARM = "gotify_messages_p0_alarm"
+        const val P0_ALARM_FOREGROUND = "gotify_p0_alarm_foreground"
     }
 
     object ID {
