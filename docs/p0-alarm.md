@@ -53,6 +53,49 @@ Android 15+ 禁止从 `BOOT_COMPLETED` 启动 `mediaPlayback` 前台服务。本
 WebSocket 前台服务被 OEM 电池策略杀掉时，手机收不到消息，后续强提醒也无从触发；这是连接层限制，
 不是闹铃服务能够补回的路径。
 
+## Android 规范与兼容边界
+
+实现遵循 Android 公开 API，而不是尝试修改系统音量、抢占音频焦点或绕过勿扰：
+
+- 精确唤醒使用 `AlarmManager.setAlarmClock()`，调用前通过
+  `canScheduleExactAlarms()` 检查用户授权；未授权时立即启动前台服务降级。精确闹钟是 Android
+  从后台启动媒体播放前台服务时明确认可的豁免路径，精确闹钟不会受一般后台启动限制影响。
+- 播放服务声明 `mediaPlayback` 前台服务类型和
+  `FOREGROUND_SERVICE_MEDIA_PLAYBACK` 权限，停止时由系统随前台服务结束移除持续通知。
+- 铃声使用 `AudioAttributes.USAGE_ALARM` 和 `CONTENT_TYPE_SONIFICATION`，与 Home Assistant
+  的 `alarm_stream`、ntfy 的持续高优先级告警采用同一 Android 音频路径。它通常能在震动模式发声，
+  但系统勿扰仍可禁止闹钟，应用不会也不应绕过该选择。
+- P0 消息使用独立静音高优先级渠道，铃声只由 `MediaPlayer` 输出，避免通知提示音与循环铃声叠加。
+  这是 ntfy #1879 记录的“双音/回声”问题所需的拆分。
+- 不使用全屏 `Intent`、悬浮窗、拨号或强行调高音量。Android 仅允许来电、用户明确设置的闹钟等少数
+  场景使用全屏通知；P0 服务器消息不冒充这些场景。
+- `SCHEDULE_EXACT_ALARM` 是用户可授予、可撤销的权限，不申请自动授予且仅限闹钟/日历核心用途的
+  `USE_EXACT_ALARM`。若未来发布到 Google Play，需要在 Play Console 如实申报精确闹钟用途。
+
+取消链路包含两层：
+
+1. P0 消息通知只在本次确实触发强提醒时显示“停止闹铃”。按钮通过不可变的
+   `PendingIntent` 通知 `P0AlarmService`；服务先取消尚未触发的精确闹钟，再 `stopSelf()`。
+2. `onDestroy()` 停止并释放 `MediaPlayer`、释放 partial wake lock；系统结束
+   `mediaPlayback` 前台服务时同步移除持续通知。定时 30 秒结束与用户主动停止走同一清理路径。
+
+MuMu Android 12 / API 32 实测 message 46：点击“停止闹铃”后，系统音频记录从
+`MediaPlayer ... usage=USAGE_ALARM state:started` 变为 `state:stopped` 并立即
+`releasing player`；P0 前台服务消失，消息本身仍保留为普通可查看通知。
+
+同类实现可参考：
+
+- [Gotify #216 Critical Alert](https://github.com/gotify/android/issues/216)：最早汇总 Home Assistant
+  闹钟音频流方案的 Gotify 需求。
+- [Gotify #203 Notification Sound until confirmation](https://github.com/gotify/android/issues/203)：
+  持续响铃直到确认的原始需求。
+- [Home Assistant Critical notifications](https://companion.home-assistant.io/docs/notifications/critical-notifications/)：
+  Android alarm stream、高优先级与勿扰渠道的公开说明。
+- [ntfy #189](https://github.com/binwiederhier/ntfy-android/issues/189)：持续铃声必须在通知被
+  清除时显式停止；本实现把停止动作直接绑定到前台服务，避免该失效组合。
+- [ntfy #1879](https://github.com/binwiederhier/ntfy/issues/1879)：通知渠道声音与循环播放器同时播放，
+  会产生叠加/回声；本实现使用静音 P0 渠道规避。
+
 ## 简体中文
 
 `values-zh-rCN` 覆盖登录、OIDC/证书、消息列表、导航、设置、日志、分享、通知渠道和 P0 强提醒。
