@@ -83,6 +83,15 @@ MuMu Android 12 / API 32 实测 message 46：点击“停止闹铃”后，系�
 `MediaPlayer ... usage=USAGE_ALARM state:started` 变为 `state:stopped` 并立即
 `releasing player`；P0 前台服务消失，消息本身仍保留为普通可查看通知。
 
+## 竖屏验收
+
+MuMu 在 `720×1280`、180 dpi 的竖屏下完成三处实看：
+
+- 消息列表保留左侧发送者图标、标题/时间/删除动作，正文在单行后省略并可点开查看，没有横向溢出。
+- 设置页的 P0 分类使用标准 Preference 行，标题与摘要允许两行；滚动后“可靠性限制”和后续“连接”
+  分类完整可达，没有截断或重叠。
+- 通知栏用单列布局显示 P0 标题、摘要和“停止闹铃”；折叠态正文以省略号收口，停止动作无需展开即可操作。
+
 同类实现可参考：
 
 - [Gotify #216 Critical Alert](https://github.com/gotify/android/issues/216)：最早汇总 Home Assistant
