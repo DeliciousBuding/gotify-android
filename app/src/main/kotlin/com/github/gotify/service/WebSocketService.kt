@@ -243,14 +243,16 @@ internal class WebSocketService : Service() {
             broadcast(message)
         }
         val size = messages.size
+        val p0AlarmTriggered =
+            p0AlarmMessage?.let { P0AlarmScheduler.trigger(this, it) } ?: false
         showNotification(
             NotificationSupport.ID.GROUPED,
             getString(R.string.missed_messages),
             getString(R.string.grouped_message, size),
             highestPriority,
-            null
+            null,
+            p0AlarmTriggered
         )
-        p0AlarmMessage?.let { P0AlarmScheduler.trigger(this, it) }
     }
 
     private fun onMessage(message: Message) {
@@ -258,15 +260,16 @@ internal class WebSocketService : Service() {
             lastReceivedMessage.set(message.id)
         }
         broadcast(message)
+        val p0AlarmTriggered = P0AlarmScheduler.trigger(this, message)
         showNotification(
             message.id,
             message.title ?: "",
             message.message,
             message.priority ?: 0L,
             message.extras,
-            message.appid
+            message.appid,
+            p0AlarmTriggered
         )
-        P0AlarmScheduler.trigger(this, message)
     }
 
     private fun broadcast(message: Message) {
@@ -319,9 +322,10 @@ internal class WebSocketService : Service() {
         title: String,
         message: String,
         priority: Long,
-        extras: Map<String, Any>?
+        extras: Map<String, Any>?,
+        p0AlarmTriggered: Boolean
     ) {
-        showNotification(id.toLong(), title, message, priority, extras, -1L)
+        showNotification(id.toLong(), title, message, priority, extras, -1L, p0AlarmTriggered)
     }
 
     private fun showNotification(
@@ -330,7 +334,8 @@ internal class WebSocketService : Service() {
         message: String,
         priority: Long,
         extras: Map<String, Any>?,
-        appId: Long
+        appId: Long,
+        p0AlarmTriggered: Boolean
     ) {
         var intent: Intent
 
@@ -441,7 +446,7 @@ internal class WebSocketService : Service() {
                 }
             )
 
-        if (p0AlarmEnabled) {
+        if (p0AlarmTriggered) {
             b.addAction(
                 0,
                 getString(R.string.p0_alarm_stop),
